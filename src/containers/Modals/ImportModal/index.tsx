@@ -91,7 +91,7 @@ export const ImportModal: React.FC<ModalProps> = ({ visible, setVisible }) => {
             key={jsonFile?.name}
             onChange={handleFileChange}
             type="file"
-            accept="application/JSON"
+            accept="application/JSON, application/x-yaml"
           />
           <AiOutlineUpload size={48} />
           <StyledUploadMessage>Click Here to Upload JSON</StyledUploadMessage>
