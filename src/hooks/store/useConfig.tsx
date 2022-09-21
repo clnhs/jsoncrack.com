@@ -3,16 +3,19 @@ import { defaultJson } from "src/constants/data";
 import create from "zustand";
 
 interface ConfigActions {
-  setJson: (json: string) => void;
+  getLanguage: () => string;
+  setLanguage: (language: string) => void;
+  setDocument: (document: string) => void;
   setConfig: (key: keyof Config, value: unknown) => void;
-  getJson: () => string;
+  getDocument: () => string;
   zoomIn: () => void;
   zoomOut: () => void;
   centerView: () => void;
 }
 
 export interface Config {
-  json: string;
+  language: string;
+  document: string;
   cursorMode: "move" | "navigation";
   layout: "LEFT" | "RIGHT" | "DOWN" | "UP";
   expand: boolean;
@@ -22,7 +25,8 @@ export interface Config {
 }
 
 const initialStates: Config = {
-  json: defaultJson,
+  language: "json",
+  document: defaultJson,
   cursorMode: "move",
   layout: "RIGHT",
   expand: true,
@@ -32,8 +36,10 @@ const initialStates: Config = {
 
 const useConfig = create<Config & ConfigActions>()((set, get) => ({
   ...initialStates,
-  getJson: () => get().json,
-  setJson: (json: string) => set({ json }),
+  getLanguage: () => get().language,
+  setLanguage: (language: string) => set({ language }),
+  getDocument: () => get().document,
+  setDocument: (document: string) => set({ document }),
   zoomIn: () => {
     const zoomPanPinch = get().zoomPanPinch;
     if (zoomPanPinch) {
