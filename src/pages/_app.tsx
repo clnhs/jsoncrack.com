@@ -22,7 +22,7 @@ if (process.env.NODE_ENV !== "development") {
 function JsonCrack({ Component, pageProps }: AppProps) {
   const { query } = useRouter();
   const lightmode = useStored(state => state.lightmode);
-  const setJson = useConfig(state => state.setJson);
+  const setDocument = useConfig(state => state.setDocument);
   const [isRendered, setRendered] = React.useState(false);
 
   React.useEffect(() => {
@@ -33,9 +33,9 @@ function JsonCrack({ Component, pageProps }: AppProps) {
       const jsonDecoded = decompress(JSON.parse(isJsonValid));
       const jsonString = JSON.stringify(jsonDecoded);
 
-      setJson(jsonString);
+      setDocument(jsonString);
     }
-  }, [query.json, setJson]);
+  }, [query.json, setDocument]);
 
   React.useEffect(() => {
     setRendered(true);

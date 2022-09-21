@@ -6,6 +6,8 @@ import useGraph from "src/hooks/store/useGraph";
 import useStored from "src/hooks/store/useStored";
 import { parser } from "src/utils/jsonParser";
 import styled from "styled-components";
+import { defaultJson } from "../../constants/data";
+import { isValidYaml } from "../../utils/isValidYaml";
 
 loader.config({
   paths: {
@@ -32,50 +34,62 @@ export const MonacoEditor = ({
 }: {
   setHasError: (value: boolean) => void;
 }) => {
-  const json = useConfig(state => state.json);
+  const document = useConfig(state => state.document);
+  const language = useConfig(state => state.language);
   const expand = useConfig(state => state.expand);
-  const setJson = useConfig(state => state.setJson);
+  const setDocument = useConfig(state => state.setDocument);
   const setGraphValue = useGraph(state => state.setGraphValue);
-  const lightmode = useStored(state => (state.lightmode ? "light" : "vs-dark"));
-  const [value, setValue] = React.useState<string | undefined>("");
+  const [value, setValue] = React.useState<string | undefined>(document);
 
+  const lightmode = useStored(state => (state.lightmode ? "light" : "vs-dark"));
 
   React.useEffect(() => {
-    const { nodes, edges } = parser(json, expand);
+    const { nodes, edges } = parser(document, expand);
 
     setGraphValue("nodes", nodes);
     setGraphValue("edges", edges);
-    setValue(json);
-  }, [expand, json, setGraphValue]);
+  }, [expand, document, setGraphValue]);
 
   React.useEffect(() => {
     const formatTimer = setTimeout(() => {
       try {
         if (!value) {
           setHasError(false);
-          return setJson("{}");
+          return setDocument("{}");
         }
 
-        const parsedJSON = JSON.stringify(JSON.parse(value), null, 2);
-        setJson(parsedJSON);
-        setHasError(false);
-      } catch (jsonError: any) {
+        if (language === "json") {
+          const parsedJSON = JSON.stringify(JSON.parse(value), null, 2);
+          setDocument(parsedJSON);
+          setHasError(false);
+        } else if (language === "yaml") {
+          const yaml = isValidYaml(value);
+          if (yaml) {
+            const parsedJSON = JSON.stringify(yaml.toJSON());
+            setDocument(parsedJSON);
+            setHasError(false);
+          } else throw new Error("invalid YAML");
+        }
+      } catch (error: any) {
         setHasError(true);
       }
     }, 1200);
 
     return () => clearTimeout(formatTimer);
-  }, [value, setJson, setHasError]);
+  }, [value, language, setDocument, setHasError]);
 
   return (
     <StyledWrapper>
       <Editor
         height="100%"
         defaultLanguage="json"
+        defaultValue={defaultJson}
         value={value}
         theme={lightmode}
+        language={language}
         options={editorOptions}
         onChange={setValue}
+        onValidate={console.log}
         loading={<Loading message="Loading Editor..." />}
       />
     </StyledWrapper>

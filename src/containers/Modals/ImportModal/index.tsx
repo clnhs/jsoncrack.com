@@ -6,6 +6,7 @@ import { Input } from "src/components/Input";
 import { Modal, ModalProps } from "src/components/Modal";
 import useConfig from "src/hooks/store/useConfig";
 import styled from "styled-components";
+import { parseDocument } from "yaml";
 
 const StyledModalContent = styled(Modal.Content)`
   display: flex;
@@ -42,35 +43,42 @@ const StyledUploadMessage = styled.h3`
 `;
 
 export const ImportModal: React.FC<ModalProps> = ({ visible, setVisible }) => {
-  const setJson = useConfig(state => state.setJson);
+  const setDocument = useConfig(state => state.setDocument);
   const [url, setURL] = React.useState("");
-  const [jsonFile, setJsonFile] = React.useState<File | null>(null);
+  const [textFile, setTextFile] = React.useState<File | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) setJsonFile(e.target.files?.item(0));
+    if (e.target.files) setTextFile(e.target.files?.item(0));
   };
 
   const handleImportFile = () => {
     if (url) {
-      setJsonFile(null);
+      setTextFile(null);
 
       toast.loading("Loading...", { id: "toastFetch" });
       return fetch(url)
         .then(res => res.json())
         .then(json => {
-          setJson(JSON.stringify(json));
+          setDocument(JSON.stringify(json));
           setVisible(false);
         })
         .catch(() => toast.error("Failed to fetch JSON!"))
         .finally(() => toast.dismiss("toastFetch"));
     }
 
-    if (jsonFile) {
+    if (textFile) {
       const reader = new FileReader();
 
-      reader.readAsText(jsonFile, "UTF-8");
+      reader.readAsText(textFile, "UTF-8");
       reader.onload = function (data) {
-        setJson(data.target?.result as string);
+        if (textFile.type === "application/json") {
+          setDocument(data.target?.result as string);
+        } else if (textFile.type === "application/x-yaml") {
+          const convertedYaml = parseDocument(
+            data.target?.result as string
+          ).toJSON();
+          setDocument(JSON.stringify(convertedYaml) as string);
+        }
         setVisible(false);
       };
     }
@@ -88,21 +96,21 @@ export const ImportModal: React.FC<ModalProps> = ({ visible, setVisible }) => {
         />
         <StyledUploadWrapper>
           <input
-            key={jsonFile?.name}
+            key={textFile?.name}
             onChange={handleFileChange}
             type="file"
             accept="application/JSON, application/x-yaml"
           />
           <AiOutlineUpload size={48} />
           <StyledUploadMessage>Click Here to Upload JSON</StyledUploadMessage>
-          <StyledFileName>{jsonFile?.name ?? "None"}</StyledFileName>
+          <StyledFileName>{textFile?.name ?? "None"}</StyledFileName>
         </StyledUploadWrapper>
       </StyledModalContent>
       <Modal.Controls setVisible={setVisible}>
         <Button
           status="SECONDARY"
           onClick={handleImportFile}
-          disabled={!(jsonFile || url)}
+          disabled={!(textFile || url)}
         >
           Import
         </Button>
